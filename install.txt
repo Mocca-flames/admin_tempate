@@ -1,1 +1,23 @@
-npm install axios && npm install react-router-dom
+# Modern Admin Dashboard Template - Installation Guide
+
+## Required Dependencies
+npm install axios react-router-dom chart.js react-chartjs-2
+
+## Development Dependencies (already included in package.json)
+# eslint, vite, etc. are already configured
+
+## Quick Start
+1. Clone the repository
+2. Run: npm install
+3. Run: npm run dev
+4. Open http://localhost:5173/
+
+## Dependencies Explanation
+- axios: HTTP client for API requests
+- react-router-dom: Client-side routing for React
+- chart.js: Chart library for data visualization
+- react-chartjs-2: React wrapper for Chart.js
+
+## Optional: For production builds
+npm run build
+npm run preview
