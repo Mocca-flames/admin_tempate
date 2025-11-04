@@ -1,0 +1,26 @@
+/* CHART COMPONENT STYLES */
+
+.chart {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 200px;
+}
+
+.chart-line,
+.chart-bar,
+.chart-doughnut {
+  /* Chart.js canvas styling */
+}
+
+/* Override Chart.js default styles to match theme */
+.chart canvas {
+  /* Ensure charts work well in both themes */
+}
+
+/* Responsive chart container */
+@media (max-width: 768px) {
+  .chart {
+    min-height: 250px;
+  }
+}
