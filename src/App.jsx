@@ -3,7 +3,10 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import DashboardLayout from './layouts/DashboardLayout';
 import Dashboard from './pages/Dashboard';
-import Users from './pages/Users';
+import Clients from './pages/Clients';
+import Drivers from './pages/Drivers';
+import Orders from './pages/Orders';
+import Pricing from './pages/Pricing';
 import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
 import './styles/variables.css';
@@ -27,11 +30,13 @@ function App() {
         <DashboardLayout>
           <Routes>
             <Route path="/" element={<Dashboard />} />
-            <Route path="/users" element={<Users />} />
+            <Route path="/clients" element={<Clients />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/drivers" element={<Drivers />} />
+            <Route path="/orders" element={<Orders />} />
+            <Route path="/price" element={<Pricing />} />
 
             {/* ADD YOUR NEW ROUTES HERE */}
-            {/* <Route path="/products" element={<Products />} /> */}
             {/* <Route path="/orders" element={<Orders />} /> */}
 
             {/* 404 Page */}

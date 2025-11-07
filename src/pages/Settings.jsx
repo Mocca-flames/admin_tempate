@@ -13,7 +13,7 @@ import { Card } from '../components/Card';
 
 const Settings = () => {
     const [settings, setSettings] = useState({
-        siteName: 'Admin Pro',
+        siteName: 'Molotech',
         email: 'admin@example.com',
         notifications: true,
         darkMode: false,

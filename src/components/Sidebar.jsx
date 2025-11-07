@@ -24,14 +24,20 @@ const Sidebar = () => {
             section: 'Main',
             items: [
                 { path: '/', icon: '📊', label: 'Dashboard' },
-                { path: '/analytics', icon: '📈', label: 'Analytics' },
+                { path: '/create-order', icon: '🛒', label: 'Create Order' },
+            ]
+        },
+        {
+            section: 'Pricing',
+            items: [
+                { path: '/price', icon: '💳', label: 'Pricing' },
             ]
         },
         {
             section: 'Management',
             items: [
-                { path: '/users', icon: '👥', label: 'Users' },
-                { path: '/products', icon: '📦', label: 'Products' },
+                { path: '/clients', icon: '👥', label: 'Clients' },
+                { path: '/drivers', icon: '🚘', label: 'Drivers' },
                 { path: '/orders', icon: '🛒', label: 'Orders' },
             ]
         },
@@ -39,7 +45,6 @@ const Sidebar = () => {
             section: 'Settings',
             items: [
                 { path: '/settings', icon: '⚙️', label: 'Settings' },
-                { path: '/help', icon: '❓', label: 'Help' },
             ]
         }
     ];
@@ -48,8 +53,8 @@ const Sidebar = () => {
         <aside className="sidebar">
             {/* Logo Section - CUSTOMIZE THIS */}
             <div className="sidebar-logo">
-                <div className="logo-icon">A</div>
-                <h2>Admin Pro</h2>
+                <div className="logo-icon">M</div>
+                <h2>Molo Admin</h2>
             </div>
 
             {/* Navigation */}

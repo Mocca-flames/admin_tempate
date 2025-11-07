@@ -3,30 +3,45 @@ import { Card, StatCard } from '../components/Card';
 import Table from '../components/Table';
 import Chart from '../components/Chart';
 import Button from '../components/Button';
-import { getMockDashboardStats, getMockUsers, getMockChartData } from '../services/api';
+import { getStatsSummary, getAllOrders, getAllClients } from '../services/api';
 
-/**
- * DASHBOARD PAGE
- * Main landing page with statistics and overview
- * 
- * HOW TO CUSTOMIZE:
- * 1. Change stat cards to show your metrics
- * 2. Update table to show relevant data
- * 3. Connect to your API endpoints
- */
+// Helper functions for formatting
+const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-ZA', {
+        style: 'currency',
+        currency: 'ZAR',
+        minimumFractionDigits: 2,
+    }).format(amount);
+};
+
+const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-ZA', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+    });
+};
+
+const getClientName = (clientId, clients) => {
+    const client = clients.find(c => c.id === clientId);
+    return client ? client.full_name : clientId;
+};
 
 const Dashboard = () => {
     const [stats, setStats] = useState({
-        totalUsers: 0,
+        totalOrders: 0,
         totalRevenue: 0,
-        activeOrders: 0,
-        growth: 0
+        averagePrice: 0,
+        activeDrivers: 0,
+        periodStart: '',
+        periodEnd: '',
+        topClients: []
     });
-    const [recentUsers, setRecentUsers] = useState([]);
+    const [recentOrders, setRecentOrders] = useState([]);
     const [chartData, setChartData] = useState(null);
+    const [clients, setClients] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // Fetch data on component mount
     useEffect(() => {
         fetchDashboardData();
     }, []);
@@ -35,24 +50,50 @@ const Dashboard = () => {
         try {
             setLoading(true);
 
-            // Fetch data from mock API functions
-            const [statsData, usersData, chartDataResponse] = await Promise.all([
-                getMockDashboardStats(),
-                getMockUsers(),
-                getMockChartData()
+            // ✅ Use your real API endpoints
+            const [statsData, ordersData, clientsData] = await Promise.all([
+                getStatsSummary(30),  // Last 30 days
+                getAllOrders(),
+                getAllClients()
             ]);
 
-            setStats(statsData);
-            setRecentUsers(usersData.slice(0, 5)); // Show only first 5 users
-
-            // Combine chart data for display
-            setChartData({
-                labels: chartDataResponse.userGrowth.labels,
-                datasets: [
-                    chartDataResponse.userGrowth.datasets[0],
-                    chartDataResponse.revenue.datasets[0]
-                ]
+            // ✅ Map API response to state
+            setStats({
+                totalOrders: statsData.orders?.total || 0,
+                totalRevenue: statsData.revenue?.gross_revenue || 0,
+                averagePrice: statsData.revenue?.gross_revenue / statsData.orders?.total || 0,
+                activeDrivers: statsData.users?.total_drivers || 0,
+                periodStart: statsData.period_start,
+                periodEnd: statsData.period_end,
+                topClients: statsData.top_clients || []
             });
+
+            // ✅ Get recent orders (last 5)
+            setRecentOrders(ordersData.slice(0, 5));
+
+            // ✅ Set clients data for mapping client IDs to names
+            setClients(clientsData);
+
+            // ✅ Prepare chart data from orders_by_status (if available)
+            if (statsData.orders_by_status) {
+                setChartData({
+                    labels: Object.keys(statsData.orders_by_status),
+                    datasets: [{
+                        label: 'Orders by Status',
+                        data: Object.values(statsData.orders_by_status),
+                        backgroundColor: ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#6366f1']
+                    }]
+                });
+            } else {
+                setChartData({
+                    labels: ['Pending', 'Completed', 'Cancelled'],
+                    datasets: [{
+                        label: 'Orders by Status',
+                        data: [statsData.orders?.total - statsData.orders?.completed || 0, statsData.orders?.completed || 0, 0],
+                        backgroundColor: ['#3b82f6', '#22c55e', '#ef4444']
+                    }]
+                });
+            }
 
             setLoading(false);
         } catch (error) {
@@ -61,10 +102,11 @@ const Dashboard = () => {
         }
     };
 
-    // Table columns configuration
+    // ✅ Map order data to table columns
     const tableColumns = [
-        { key: 'name', label: 'Name' },
-        { key: 'email', label: 'Email' },
+        { key: 'id', label: 'Order ID' },
+        { key: 'pickup_address', label: 'Pickup' },
+        { key: 'dropoff_address', label: 'Dropoff' },
         {
             key: 'status',
             label: 'Status',
@@ -74,7 +116,7 @@ const Dashboard = () => {
                 </span>
             )
         },
-        { key: 'joined', label: 'Joined Date' }
+        { key: 'price', label: 'Price' }
     ];
 
     if (loading) {
@@ -89,78 +131,110 @@ const Dashboard = () => {
             {/* Statistics Cards */}
             <div className="grid grid-4" style={{ marginTop: '32px', marginBottom: '32px' }}>
                 <StatCard
-                    icon="👥"
-                    label="Total Users"
-                    value={stats.totalUsers.toLocaleString()}
-                    change="+12%"
-                    positive={true}
+                    icon="📦"
+                    label="Total Orders"
+                    value={stats.totalOrders}
                     color="primary"
                 />
                 <StatCard
                     icon="💰"
                     label="Total Revenue"
-                    value={`$${stats.totalRevenue.toLocaleString()}`}
-                    change="+8%"
-                    positive={true}
+                    value={formatCurrency(stats.totalRevenue)}
                     color="success"
                 />
                 <StatCard
-                    icon="📦"
-                    label="Active Orders"
-                    value={stats.activeOrders}
-                    change="-3%"
-                    positive={false}
-                    color="warning"
+                    icon="📊"
+                    label="Average Price"
+                    value={formatCurrency(stats.averagePrice)}
+                    color="info"
                 />
                 <StatCard
-                    icon="📈"
-                    label="Growth Rate"
-                    value={`${stats.growth}%`}
-                    change="+2%"
-                    positive={true}
-                    color="info"
+                    icon="🚗"
+                    label="Active Drivers"
+                    value={stats.activeDrivers}
+                    color="warning"
                 />
             </div>
 
             {/* Charts Section */}
             <div className="grid grid-2" style={{ marginBottom: '32px' }}>
-                <Card title="Analytics Overview">
+                <Card title="Orders by Status">
                     <Chart
-                        type="line"
+                        type="bar"
                         data={chartData}
                         height={300}
-                        options={{
-                            plugins: {
-                                legend: {
-                                    display: true,
-                                    position: 'top'
-                                }
-                            }
-                        }}
                     />
                 </Card>
                 <Card title="Quick Actions">
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                         <Button variant="primary" fullWidth>
-                            Add New User
+                            Create New Order
                         </Button>
                         <Button variant="secondary" fullWidth>
-                            Generate Report
+                            View All Orders
                         </Button>
                         <Button variant="outline" fullWidth>
-                            Export Data
+                            Manage Drivers
                         </Button>
                     </div>
                 </Card>
             </div>
 
-            {/* Recent Activity Table */}
-            <Card title="Recent Users">
+            {/* Top Clients Section */}
+            <div className="grid grid-1" style={{ marginBottom: '32px' }}>
+                <Card title="Top Clients">
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {stats.topClients.length > 0 ? (
+                            stats.topClients.map((client, index) => (
+                                <div
+                                    key={client.client_id}
+                                    style={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        padding: '12px',
+                                        backgroundColor: index % 2 === 0 ? '#f8f9fa' : '#ffffff',
+                                        borderRadius: '8px',
+                                        border: '1px solid #e9ecef'
+                                    }}
+                                >
+                                    <div>
+                                        <span style={{ fontWeight: '500', color: '#495057' }}>
+                                            {getClientName(client.client_id, clients)}
+                                        </span>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <span style={{ fontSize: '14px', color: '#6c757d' }}>
+                                            {client.orders} order{client.orders !== 1 ? 's' : ''}
+                                        </span>
+                                        <span style={{
+                                            backgroundColor: '#007bff',
+                                            color: 'white',
+                                            padding: '4px 8px',
+                                            borderRadius: '12px',
+                                            fontSize: '12px',
+                                            fontWeight: '500'
+                                        }}>
+                                            #{index + 1}
+                                        </span>
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <p style={{ textAlign: 'center', color: '#6c757d', margin: '20px 0' }}>
+                                No client data available
+                            </p>
+                        )}
+                    </div>
+                </Card>
+            </div>
+            {/* Recent Orders Table */}
+            <Card title="Recent Orders" style={{ marginTop: '32px' }}>
                 <Table
                     columns={tableColumns}
-                    data={recentUsers}
-                    onEdit={(row) => console.log('Edit user:', row)}
-                    onDelete={(row) => console.log('Delete user:', row)}
+                    data={recentOrders}
+                    onEdit={(row) => console.log('Edit order:', row)}
+                    onDelete={(row) => console.log('Delete order:', row)}
                 />
             </Card>
         </div>
